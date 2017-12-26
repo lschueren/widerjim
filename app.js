@@ -2,7 +2,7 @@
 var canvas = document.getElementById("canvas");
 var ctx = canvas.getContext("2d");
 
-//Setup Game
+//Setup Gamesdingsi
 var fps = 60;
 var backgroundColor = "black";
 
