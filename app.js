@@ -39,6 +39,7 @@ var player = {};
     player.keyLeft = false;
     player.keyRight = false;
     player.shootKey = false;
+    player.energy = 100;
 
 function createBullet(){
     var bullet = {};
@@ -61,6 +62,7 @@ function createEnemy(){
     enemy.y = 0;
     enemy.height = 600;
     enemy.width = 800;
+    enemy.energy = 2000;
     ///colision box körper
     enemy.colBoxX = enemy.x + 190;
     enemy.colBoxY = enemy.y;
@@ -99,15 +101,23 @@ function drawBullets(){
 function drawEnemies(){
     for ( var i = 0; i < this.enemies.length; i++ ) {
         ctx.drawImage( this.enemies[i].image, this.enemies[i].x, this.enemies[i].y, this.enemies[i].width, this.enemies[i].height);
-       /* /// Arm Hitbox malen
-        ctx.save();
+       /// Arm Hitbox malen
+        /* ctx.save();
         ctx.fillStyle = "#FFFFFF";
         ctx.fillRect(this.enemies[i].colBoxArmX, this.enemies[i].colBoxArmY, this.enemies[i].colBoxArmWidth, this.enemies[i].colBoxArmHeight);
-        ctx.restore();*/
+        ctx.restore(); */
     } 
 }
 
-
+function drawGUI(){
+    powerplayer = this.player.energy;
+    powerenemy = this.enemies[0].energy/100*40;
+    console.log(powerenemy);
+    ctx.beginPath();
+    ctx.fillStyle="red";
+    ctx.fillRect(0,0,powerenemy,25);
+    ctx.closePath();
+}
 
 ////Update Dinge
 function updateBullets(){
@@ -198,8 +208,15 @@ function updateEnemies(){
         if (this.enemies[i].x == (0-this.enemies[i].width)){
             this.enemies.splice(this.enemies[i], 1);
         }
-    } 
+     
 
+        //wenn feind tot dann game over
+    
+        if (this.enemies[i].energy <= 0){
+            clearInterval(myTimer);
+            alert("YOU FUCKING WIN");
+        }
+    }
 
 }
 
@@ -208,7 +225,7 @@ function updateEnemies(){
 
 function checkCollisions(bullet, enemy){
 
-   //Ränder
+//Ränder
     if (player.y < 0){
         player.y = 0;
     }
@@ -226,14 +243,14 @@ function checkCollisions(bullet, enemy){
 
 
 
-    //Kollisionen
+//Kollisionen
     ////Treffer in Körper?
     for(i = 0; i < this.bullets.length; i++){
         for(j = 0; j < this.enemies.length; j++){
             if ((this.bullets[i].x + this.bullets[i].width) >= this.enemies[j].colBoxX) {
                 this.bullets[i].image.src="img/bulletred.png";
                 this.bullets[i].isMoving = false;
-                
+                this.enemies[j].energy = this.enemies[j].energy - 1;
                 setTimeout(function(){
                 this.bullets.splice(this.bullets[i], 1);
                 }, 200);
@@ -250,9 +267,11 @@ function checkCollisions(bullet, enemy){
                 this.bullets[i].image.src="img/bulletred.png";
                 this.bullets[i].isMoving = false;
                 //console.log("ArmHit!");
+                this.enemies[j].energy = this.enemies[j].energy - 1;
                 setTimeout(function(){
                 this.bullets.splice(this.bullets[i], 1);
                 }, 200);
+                
             }
         }
     }
@@ -265,13 +284,54 @@ function checkCollisions(bullet, enemy){
     }
 
     ////Arm Berührt?
-    for(i = 0; i < this.enemies.length; i++){
-        if ((this.player.x + this.player.width) >= (this.enemies[i].colBoxArmX) && (this.player.y + this.player.height) >= this.enemies[i].colBoxArmY && this.player.y <= (this.enemies[i].colBoxArmY + this.enemies[i].colBoxArmHeight)){
-        this.player.x = this.enemies[i].colBoxArmX -this.player.width;
-        }
-    }
 
+    for(i=0; i< this.enemies.length; i++){
+        var armtop = this.enemies[i].colBoxArmY;
+        var armleft = this.enemies[i].colBoxArmX;
+        var armright = this.enemies[i].colBoxArmX + this.enemies[i].colBoxArmWidth;
+        var armbottom = this.enemies[i].colBoxArmY + this.enemies[i].colBoxArmHeight;
+
+        var playertop = player.y;
+        var playerleft = player.x;
+        var playerright = player.x + player.width;
+        var playerbottom = player.y + player.height;
+
+        var colliosion = false;
+
+        //has a collision happened?
+
+        if (playerright > armleft && playerbottom > armtop && playertop < armbottom && playerleft < armright){
+            
+
+            //collision left side?
+            if (playerleft < armleft){
+                if ((playerbottom-armtop)>(playerright-armleft)){
+                    player.x = armleft - player.width;
+                }
+            }
+        
+            //collision top?
+           if (playertop < armtop){
+               if ((playerright-armleft)>(playerbottom-armtop)){
+                   player.y = armtop - player.height;
+               }
+           }
+
+           //collision bottom?
+           if (playerbottom > armbottom){
+                if ((playerright-armleft)>(armbottom-playertop)){
+                player.y = armbottom;
+                }
+            }
+        } 
+    }
 }
+    
+
+ 
+
+
+
 
 
 //Input Handling
@@ -333,7 +393,7 @@ window.onload = function(){
 
     createEnemy();
     //Dinge die in einem Frame passieren
-    setInterval(function(){
+    myTimer = setInterval(function(){
 
         updatePlayer();
         checkCollisions();
@@ -344,8 +404,9 @@ window.onload = function(){
         drawEnemies();
         drawPlayer();
         drawBullets();
+        drawGUI();
         
-        console.log(enemies[0].frameCounter);
+        /* console.log(enemies[0].frameCounter); */
 
     }, 1000/fps);
 }
