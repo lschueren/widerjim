@@ -19,6 +19,10 @@ var shootDelay = 5;
 var bulletKillTimer = 90;
 var bulletSpeed = 10;
 
+var enemyBulletKillTimer = 1000;
+var enemyBulletSpeed = 2;
+
+var enemyBullets = [];
 var bullets = [];
 
 ////Werte Feinde
@@ -39,7 +43,7 @@ var player = {};
     player.keyLeft = false;
     player.keyRight = false;
     player.shootKey = false;
-    player.energy = 100;
+    player.energy = 2000;
 
 function createBullet(){
     var bullet = {};
@@ -54,10 +58,35 @@ function createBullet(){
 this.bullets.push( bullet );
 }
 
+function createEnemyBullet(){
+    var enemyBullet = {};
+        enemyBullet.image = new Image();
+        enemyBullet.image.src = "img/enemybullet.png"
+        enemyBullet.image2 = new Image();
+        enemyBullet.image2.src = "img/enemybullet1.png"
+        enemyBullet.image3 = new Image();
+        enemyBullet.image3.src = "img/enemybullet2.png"
+        enemyBullet.image4 = new Image();
+        enemyBullet.image4.src = "img/enemybullet3.png"
+        enemyBullet.x = (enemies[0].x + enemies[0].width/3);
+        enemyBullet.y = (enemies[0].height/4);
+        enemyBullet.height = 100;
+        enemyBullet.width = 100;
+        enemyBullet.timer = enemyBulletKillTimer;
+        enemyBullet.isMoving = true;
+this.enemyBullets.push( enemyBullet );
+}
+
+
 function createEnemy(){
     var enemy = {};
     enemy.image = new Image();
     enemy.image.src = "img/enemy.png"
+    enemy.image1 = new Image();
+    enemy.image1.src = "img/enemy_open1.png"
+    enemy.image2 = new Image();
+    enemy.image2.src = "img/enemy_open2.png"
+    enemy.animationframe = 1;
     enemy.x = 800;
     enemy.y = 0;
     enemy.height = 600;
@@ -96,6 +125,11 @@ function drawBullets(){
     for ( var i = 0; i < this.bullets.length; i++ ) {
         ctx.drawImage( this.bullets[i].image, this.bullets[i].x, this.bullets[i].y, this.bullets[i].width, this.bullets[i].height);
     } 
+
+    for ( var i = 0; i < this.enemyBullets.length; i++ ) {
+        ctx.drawImage( this.enemyBullets[i].image, this.enemyBullets[i].x, this.enemyBullets[i].y, this.enemyBullets[i].width, this.enemyBullets[i].height);
+    }
+
 }
 
 function drawEnemies(){
@@ -110,13 +144,19 @@ function drawEnemies(){
 }
 
 function drawGUI(){
-    powerplayer = this.player.energy;
+    powerplayer = this.player.energy/100*40;
     powerenemy = this.enemies[0].energy/100*40;
-    console.log(powerenemy);
+    
     ctx.beginPath();
     ctx.fillStyle="red";
     ctx.fillRect(0,0,powerenemy,25);
     ctx.closePath();
+
+    ctx.beginPath();
+    ctx.fillStyle="blue";
+    ctx.fillRect(0,575,powerplayer,25);
+    ctx.closePath();
+
 }
 
 ////Update Dinge
@@ -129,9 +169,40 @@ function updateBullets(){
                 this.bullets.splice(this.bullets[i], 1);
             }
         }
-    } 
+    }
 
+    
+
+    for ( var j = 0; j < this.enemyBullets.length; j++ ) {
+        if (this.enemyBullets[j].isMoving == true){
+           this.enemyBullets[j].timer = this.enemyBullets[j].timer - 1;
+            
+           //in richtung des spielers bewegen
+            if (player.x < this.enemyBullets[j].x){
+            this.enemyBullets[j].x = this.enemyBullets[j].x - enemyBulletSpeed;
+            }
+
+            else if (player.x > this.enemyBullets[j].x){
+                this.enemyBullets[j].x = this.enemyBullets[j].x + enemyBulletSpeed;
+                }
+
+            if (player.y < this.enemyBullets[j].y){
+                this.enemyBullets[j].y = this.enemyBullets[j].y - enemyBulletSpeed;
+            }
+            
+            else if (player.y > this.enemyBullets[j].y){
+                this.enemyBullets[j].y = this.enemyBullets[j].y + enemyBulletSpeed;
+            }
+
+            if (this.enemyBullets[j].timer == 0){
+                this.enemyBullets.splice(this.enemyBullets[j], 1);
+            }
+        }
+    } 
 }
+
+
+
 
 function updatePlayer(){
     if (player.keyUp){
@@ -158,8 +229,20 @@ function updatePlayer(){
 
 function updateEnemies(){
     for ( var i = 0; i < this.enemies.length; i++ ) {
-        
+        //update framecounter
         this.enemies[i].frameCounter++;
+        console.log(this.enemies[i].frameCounter);
+        //welches bild anzeigen?
+        if (this.enemies[i].animationframe == 1){
+            this.enemies[i].image.src = "img/enemy.png";
+        }
+        if (this.enemies[i].animationframe == 2){
+            this.enemies[i].image.src = "img/enemy_open1.png";
+        }
+        if (this.enemies[i].animationframe == 3){
+            this.enemies[i].image.src = "img/enemy_open2.png";
+        }
+
 
         //Feind bewegen
         if (this.enemies[i].isMoving){
@@ -185,17 +268,70 @@ function updateEnemies(){
             }
         }
 
-        //Feind bewegungsroutine
+        //Feind Bewegungsroutine
         if (this.enemies[i].frameCounter == 500){
             this.enemies[i].isMoving = false;
-        }
+        }     
+
+        ///Mund auf und zu (schießen?)
+        
+        if (this.enemies[i].frameCounter == 600){
+            this.enemies[i].animationframe = 2;
+        }     
+        if (this.enemies[i].frameCounter == 625){
+            this.enemies[i].animationframe = 3;
+        }  
+        if (this.enemies[i].frameCounter == 650){
+            this.enemies[i].animationframe = 1;
+        }  
+        if (this.enemies[i].frameCounter == 675){
+            this.enemies[i].animationframe = 2;
+        }  
+        if (this.enemies[i].frameCounter == 700){
+            this.enemies[i].animationframe = 3;
+            createEnemyBullet();
+        }  
+        if (this.enemies[i].frameCounter == 725){
+            this.enemies[i].animationframe = 1;
+        }  
+        if (this.enemies[i].frameCounter == 750){
+            this.enemies[i].animationframe = 2;
+        }     
+        if (this.enemies[i].frameCounter == 775){
+            this.enemies[i].animationframe = 3;
+            createEnemyBullet();
+        }  
+        if (this.enemies[i].frameCounter == 800){
+            this.enemies[i].animationframe = 1;
+        }  
+        if (this.enemies[i].frameCounter == 825){
+            this.enemies[i].animationframe = 2;
+        }  
+        if (this.enemies[i].frameCounter == 850){
+            this.enemies[i].animationframe = 3;
+            createEnemyBullet();
+        }  
+        if (this.enemies[i].frameCounter == 875){
+            this.enemies[i].animationframe = 1;
+        }  
+
+
+
+
+
+        if (this.enemies[i].frameCounter == 900){
+            this.enemies[i].animationframe = 3;
+        }  
+
         if (this.enemies[i].frameCounter == 1000){
             this.enemies[i].direction = "right";
             this.enemies[i].isMoving = true;
         }
+
         if (this.enemies[i].frameCounter == 1500){
             this.enemies[i].isMoving = false;
         }
+
         if (this.enemies[i].frameCounter == 2000){
             this.enemies[i].frameCounter = 0;
             this.enemies[i].direction = "left";
@@ -296,6 +432,8 @@ function checkCollisions(bullet, enemy){
         var playerright = player.x + player.width;
         var playerbottom = player.y + player.height;
 
+        
+
         var colliosion = false;
 
         //has a collision happened?
@@ -325,6 +463,21 @@ function checkCollisions(bullet, enemy){
             }
         } 
     }
+
+    for(i=0; i < enemyBullets.length; i++){
+        var enemybulletleft = this.enemyBullets[i].x;
+        var enemybulletright = this.enemyBullets[i].x + this.enemyBullets[i].width;
+        var enemybullettop = this.enemyBullets[i].y;
+        var enemybulletbottom = this.enemyBullets[i].y + this.enemyBullets[i].height; 
+    
+        
+        if (playerright > enemybulletleft && playerbottom > enemybullettop && playertop < enemybulletbottom && playerleft < enemybulletright){
+            this.player.energy = this.player.energy - 25;
+                setTimeout(function(){
+                this.enemyBullets.splice(this.enemyBullets[i], 1);}, 200);
+        }
+    }
+
 }
     
 
@@ -406,7 +559,8 @@ window.onload = function(){
         drawBullets();
         drawGUI();
         
-        /* console.log(enemies[0].frameCounter); */
+    /*  console.log(enemies[0].image.src); */
+     console.log(enemyBullets.length);
 
     }, 1000/fps);
 }
